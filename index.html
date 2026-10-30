@@ -4,12 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bike Geometry Compare</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#2563eb">
 <style>
   :root { --bg:#f6f7f9; --panel:#fff; --line:#e3e6ea; --text:#1f2937; --muted:#6b7280; --accent:#2563eb; }
   * { box-sizing: border-box; }
   body { margin:0; font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:var(--text); background:var(--bg); }
   header { display:flex; flex-wrap:wrap; gap:12px 20px; align-items:center; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--line); }
-  header h1 { font-size:16px; margin:0 8px 0 0; }
+  header h1 { font-size:16px; margin:0 8px 0 0; display:flex; align-items:center; gap:9px; }
+  header h1 img { width:24px; height:24px; opacity:.92; }
   header label { display:inline-flex; gap:6px; align-items:center; color:var(--muted); }
   header select, header button, dialog button, dialog select, dialog input { font:inherit; }
   header button, dialog button { padding:4px 10px; border:1px solid var(--line); background:#fff; border-radius:6px; cursor:pointer; }
@@ -66,7 +71,7 @@
 </head>
 <body>
 <header>
-  <h1 id="title"></h1>
+  <h1><img src="favicon.svg" alt="" aria-hidden="true"><span id="title"></span></h1>
   <label><span id="lblLang"></span>
     <select id="lang"><option value="de">Deutsch</option><option value="en">English</option></select>
   </label>
