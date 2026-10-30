@@ -9,54 +9,77 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#2a7a84">
 <style>
-  :root { --bg:#f6f7f9; --panel:#fff; --line:#e3e6ea; --text:#1f2937; --muted:#6b7280; --accent:#2563eb; }
+  :root {
+    --bg:#f3f6f7; --surface:#fff; --surface-2:#eef3f4;
+    --border:#d9e2e4; --border-strong:#b8c6c9;
+    --text:#14262d; --muted:#5b6b72;
+    --accent:#1f6f7a; --accent-hover:#175862; --accent-soft:#e3f3f1; --accent-bright:#8af0d4;
+    --delta-pos:#9a5b00; --delta-neg:#0f6b78;
+    --ground:#e5eceb; --radius:8px;
+    /* Aliase für bestehende Regeln */
+    --panel:var(--surface); --line:var(--border);
+  }
   * { box-sizing: border-box; }
   body { margin:0; font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:var(--text); background:var(--bg); }
-  header { display:flex; flex-wrap:wrap; gap:12px 20px; align-items:center; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--line); }
-  header h1 { font-size:16px; margin:0 8px 0 0; display:flex; align-items:center; gap:9px; }
+  a { color:var(--accent); text-underline-offset:2px; }
+  input[type=checkbox] { accent-color:var(--accent); }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  button, select, input[type=text], input[type=number], textarea { font:inherit; color:var(--text); }
+  button, select, input[type=text], input[type=number] { padding:4px 10px; border:1px solid var(--border); border-radius:6px; background:var(--surface); }
+  select { padding-right:4px; }
+  button { cursor:pointer; }
+  button:hover, select:hover { border-color:var(--border-strong); background:var(--surface-2); }
+  button.primary, #btnAdd, dialog button[type=submit] { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button.primary:hover, #btnAdd:hover, dialog button[type=submit]:hover { background:var(--accent-hover); border-color:var(--accent-hover); }
+  header { display:flex; flex-wrap:wrap; gap:12px 20px; align-items:center; padding:10px 16px; background:linear-gradient(var(--surface),#f7fafa); border-bottom:1px solid var(--border); box-shadow:inset 0 2px 0 var(--accent); }
+  header h1 { font-size:15px; font-weight:600; letter-spacing:.01em; margin:0 8px 0 0; display:flex; align-items:center; gap:9px; }
   header h1 img { width:26px; height:26px; }
   header label { display:inline-flex; gap:6px; align-items:center; color:var(--muted); }
-  header select, header button, dialog button, dialog select, dialog input { font:inherit; }
-  header button, dialog button { padding:4px 10px; border:1px solid var(--line); background:#fff; border-radius:6px; cursor:pointer; }
-  header button:hover, dialog button:hover { background:#f0f2f5; }
   .spacer { flex:1; }
   main { display:grid; grid-template-columns: 320px 1fr; gap:12px; padding:12px; align-items:start; }
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; }
   #frames { display:flex; flex-direction:column; gap:10px; padding:10px; }
-  .card { border:1px solid var(--line); border-radius:8px; padding:8px 10px; border-left-width:6px; }
-  .card.hidden { opacity:.5; }
+  .card { border:1px solid var(--line); border-radius:var(--radius); padding:8px 10px; border-left-width:4px; transition:opacity .15s; }
+  .card.hidden { opacity:.55; filter:grayscale(.6); }
   .card h3 { margin:0; font-size:14px; display:flex; gap:6px; align-items:center; }
   .card h3 span.name { flex:1; }
-  .badge { font-size:11px; padding:1px 6px; border-radius:10px; background:#111827; color:#fff; }
+  .badge { font-size:11px; padding:1px 7px; border-radius:10px; background:var(--accent); color:#fff; font-weight:500; }
   .row { display:flex; gap:10px; align-items:center; margin-top:6px; flex-wrap:wrap; }
-  .row label { color:var(--muted); display:inline-flex; gap:4px; align-items:center; }
+  .row label { color:var(--muted); font-size:12px; display:inline-flex; gap:4px; align-items:center; }
+  .card .row button { padding:2px 8px; font-size:12px; }
   .note { font-size:12px; color:var(--muted); margin-top:6px; }
-  .note a { color:var(--accent); }
-  .iconbtn { border:none; background:none; cursor:pointer; color:var(--muted); font-size:16px; padding:0 4px; }
+  .note.clamp { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; cursor:pointer; }
+  .iconbtn { border:none !important; background:none !important; cursor:pointer; color:var(--muted); font-size:18px; line-height:1; padding:4px 8px !important; border-radius:6px; }
+  .iconbtn:hover { color:var(--text); background:var(--surface-2) !important; }
   #stage { padding:0; overflow:hidden; }
   #svgwrap { position:relative; height:min(62vh,640px); min-height:360px; background:#fff; }
   #svg { width:100%; height:100%; display:block; cursor:grab; touch-action:none; }
-  #legend { position:absolute; top:8px; left:12px; font-size:13px; pointer-events:none; background:rgba(255,255,255,.85); padding:4px 8px; border-radius:6px; }
-  #legend i { display:inline-block; width:18px; height:5px; margin-right:6px; vertical-align:middle; }
+  #legend { position:absolute; top:10px; left:12px; font-size:13px; pointer-events:none; background:rgba(255,255,255,.88); border:1px solid var(--border); padding:6px 10px; border-radius:var(--radius); backdrop-filter:blur(4px); color:var(--text); }
+  #legend div { display:flex; align-items:center; gap:8px; line-height:1.7; }
+  #legend i { display:inline-block; width:18px; height:4px; border-radius:2px; flex:none; }
   #svg.drag { cursor:grabbing; }
   .toolbar { display:flex; flex-wrap:wrap; gap:8px 18px; padding:8px 12px; border-top:1px solid var(--line); align-items:center; color:var(--muted); }
   .toolbar label { display:inline-flex; gap:5px; align-items:center; }
   #tablewrap { padding:8px 12px 12px; overflow-x:auto; border-top:1px solid var(--line); }
-  table { border-collapse:collapse; width:100%; min-width:520px; }
+  table { border-collapse:collapse; width:100%; min-width:520px; font-variant-numeric:tabular-nums; }
   th, td { padding:5px 10px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; }
   th:first-child, td:first-child { text-align:left; }
   th { font-weight:600; vertical-align:bottom; }
   th .sw { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; }
-  tr.group td { background:#f3f4f6; font-weight:600; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
-  .delta { color:var(--muted); font-size:12px; margin-left:6px; }
-  .delta.pos { color:#b45309; } .delta.neg { color:#1d4ed8; }
-  td.ref { background:#fafafa; }
+  tbody tr:hover td { background:var(--surface-2); }
+  tr.group td, tbody tr.group:hover td { background:var(--surface-2); font-weight:600; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+  .delta { display:inline-block; min-width:3.4em; text-align:right; color:var(--muted); font-size:12px; margin-left:6px; }
+  .delta.ph { visibility:hidden; }
+  .delta.pos { color:var(--delta-pos); } .delta.neg { color:var(--delta-neg); }
+  td.ref, th.ref { background:color-mix(in srgb, var(--accent) 7%, #fff); }
+  td.ref { font-weight:600; }
+  tbody tr:hover td.ref { background:color-mix(in srgb, var(--accent) 12%, #fff); }
   dialog { border:1px solid var(--line); border-radius:10px; padding:16px; width:min(560px,94vw); }
   dialog::backdrop { background:rgba(0,0,0,.35); }
   dialog form { display:grid; grid-template-columns: 1fr 1fr; gap:8px 14px; }
   dialog label { display:flex; flex-direction:column; font-size:12px; color:var(--muted); gap:2px; }
-  dialog input, dialog select { padding:4px 6px; border:1px solid var(--line); border-radius:6px; color:var(--text); }
+  dialog input, dialog select { padding:4px 6px; }
   dialog .full { grid-column:1 / -1; }
   dialog .actions { grid-column:1 / -1; display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
   dialog h2 { margin:0 0 10px; font-size:16px; }
@@ -136,7 +159,7 @@ const I18N = {
     applyOk: "Übernommen – bitte Werte prüfen.", applyMissing: "Übernommen, es fehlen:", applyError: "Kein gültiges JSON gefunden.",
     noteLabel: "Notizen", f_material: "Rahmenmaterial (optional)", f_weight: "Rahmengewicht in kg (optional)",
     dlgTitle: "Rahmen hinzufügen", name: "Name", color: "Farbe", cancel: "Abbrechen", save: "Speichern",
-    deltaNote: "Δ = Abweichung zur Referenz.",
+    deltaNote: "+/− = Abweichung zur Referenz.",
     dlgHint: "Maße in mm / Grad. Tretlager-Absenkung: positiv = Tretlager unterhalb der Hinterachse.",
     f_reach: "Reach", f_stack: "Stack", f_hta: "Lenkwinkel (°)", f_sta: "Sitzwinkel (°)", f_seatTube: "Sitzrohr",
     f_chainstay: "Kettenstrebe", f_bbDrop: "Tretlager-Absenkung", f_htLength: "Steuerrohrlänge",
@@ -167,7 +190,7 @@ const I18N = {
     applyOk: "Applied – please review the values.", applyMissing: "Applied, missing:", applyError: "No valid JSON found.",
     noteLabel: "Notes", f_material: "Frame material (optional)", f_weight: "Frame weight in kg (optional)",
     dlgTitle: "Add frame", name: "Name", color: "Colour", cancel: "Cancel", save: "Save",
-    deltaNote: "Δ = difference to reference.",
+    deltaNote: "+/− = difference to reference.",
     dlgHint: "Values in mm / degrees. BB drop: positive = bottom bracket below rear axle.",
     f_reach: "Reach", f_stack: "Stack", f_hta: "Head angle (°)", f_sta: "Seat angle (°)", f_seatTube: "Seat tube",
     f_chainstay: "Chainstay", f_bbDrop: "BB drop", f_htLength: "Head tube length",
@@ -182,7 +205,7 @@ const WHEELS = Object.keys(FRAME_DATA.wheelOD);
 const OD = FRAME_DATA.wheelOD;
 const LS_CUSTOM = "bikegeo.custom.v1";
 const LS_STATE = "bikegeo.state.v1";
-const PALETTE = ["#dc2626","#9333ea","#ea580c","#0891b2","#be185d","#65a30d"];
+const PALETTE = ["#e69f00","#d55e00","#cc79a7","#56b4e9","#7a5195","#b8a600"];
 
 const loadJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const customFrames = loadJSON(LS_CUSTOM, []);
@@ -410,7 +433,7 @@ function renderSvg(keepView) {
   }
   document.getElementById("legend").innerHTML = items.map(it => {
     const wh = wheelsOf(it.f);
-    return `<div style="color:${it.f.color};font-weight:${it.f.id === ref.id ? 700 : 500}"><i style="background:${it.f.color}"></i>${esc(it.f.name)} · ${wh.front}" / ${wh.rear}"</div>`;
+    return `<div style="font-weight:${it.f.id === ref.id ? 700 : 500}"><i style="background:${it.f.color}"></i>${esc(it.f.name)} · ${wh.front}" / ${wh.rear}"</div>`;
   }).join("");
 }
 
@@ -458,7 +481,7 @@ function renderCards() {
         <label>${T("rear")}<select data-act="wr">${opts(wh.rear)}</select></label>
         ${f.id === ref.id ? "" : `<button data-act="ref">${T("setRef")}</button>`}
       </div>
-      ${(f.notes && f.notes[state.lang]) ? `<div class="note"></div>` : ""}
+      ${(f.notes && f.notes[state.lang]) ? `<div class="note note-text clamp"></div>` : ""}
       ${f.source ? `<div class="note"><a href="${f.source}" target="_blank" rel="noopener">${T("source")}</a></div>` : ""}`;
     card.querySelector(".name").textContent = f.name;
     const note = card.querySelector(".note:not(:has(a))");
@@ -470,6 +493,8 @@ function renderCards() {
       persist(); renderAll(act === "vis" ? false : true);
     });
     card.addEventListener("click", e => {
+      const noteEl = e.target.closest(".note-text");
+      if (noteEl) noteEl.classList.toggle("clamp");
       const act = e.target.dataset.act;
       if (act === "ref") { state.ref = f.id; persist(); renderAll(true); }
       if (act === "del") {
@@ -515,7 +540,7 @@ function renderTable() {
   const frames = allFrames().filter(f => isVisible(f) || f.id === ref.id);
   const ordered = [ref, ...frames.filter(f => f.id !== ref.id)];
   let h = `<table><thead><tr><th>${T("measure")}</th>`;
-  ordered.forEach(f => { h += `<th><span class="sw" style="background:${f.color}"></span>${esc(f.name)}${f.id === ref.id ? ` <span class="badge">${T("reference")}</span>` : ""}</th>`; });
+  ordered.forEach(f => { h += `<th class="${f.id === ref.id ? "ref" : ""}"><span class="sw" style="background:${f.color}"></span>${esc(f.name)}${f.id === ref.id ? ` <span class="badge">${T("reference")}</span>` : ""}</th>`; });
   h += "</tr></thead><tbody>";
   ROWS.forEach(row => {
     if (row.group) { h += `<tr class="group"><td colspan="${ordered.length + 1}">${T(row.group)}</td></tr>`; return; }
@@ -534,7 +559,9 @@ function renderTable() {
       if (f.id !== ref.id && refVal !== null) {
         const d = v - refVal, r = Number(d.toFixed(dec));
         const cls = r > 0 ? "pos" : r < 0 ? "neg" : "";
-        cell += `<span class="delta ${cls}">Δ ${r > 0 ? "+" : r < 0 ? "−" : "±"}${fmt(Math.abs(r))}</span>`;
+        cell += `<span class="delta ${cls}">${r > 0 ? "+" : r < 0 ? "−" : "±"}${fmt(Math.abs(r))}</span>`;
+      } else if (f.id === ref.id && !row.str) {
+        cell += `<span class="delta ph">±0</span>`;
       }
       h += `<td class="${f.id === ref.id ? "ref" : ""}">${cell}</td>`;
     });

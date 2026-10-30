@@ -26,7 +26,7 @@ window.FRAME_DATA = {
       reference: true,
       material: "Aluminium (AL 6066 T4/T6)",
       weight: 3.2,
-      color: "#111827",
+      color: "#14262d",
       wheels: { front: "27.5", rear: "26" },
       geo: {
         reach: 395, stack: 593, hta: 64, sta: 77.5,
@@ -46,7 +46,7 @@ window.FRAME_DATA = {
       material: "Vollcarbon (UD SLI)",
       weight: 3.2,
       reference: false,
-      color: "#2563eb",
+      color: "#0072b2",
       wheels: { front: "29", rear: "27.5" },
       geo: {
         reach: 410, stack: 627, hta: 63.5, sta: 78,
@@ -66,7 +66,7 @@ window.FRAME_DATA = {
       material: "Vollcarbon (Kona Carbon / Race Light Carbon)",
       weight: 2.45,
       reference: false,
-      color: "#16a34a",
+      color: "#009e73",
       wheels: { front: "27.5", rear: "27.5" },
       geo: {
         reach: 385, stack: 592, hta: 68, sta: 75,
