@@ -1,3 +1,5 @@
+<p align="center"><img src="logo.svg" alt="Bike Geometry Compare logo" width="112"></p>
+
 # Bike Geometry Compare
 
 Compare mountain bike frame geometries side by side – drawn to scale, with all wheels standing on the ground.
