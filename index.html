@@ -37,7 +37,6 @@
   header label { display:inline-flex; gap:6px; align-items:center; color:var(--muted); }
   .spacer { flex:1; }
   main { display:grid; grid-template-columns: 320px 1fr; gap:12px; padding:12px; align-items:start; }
-  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; }
   #frames { display:flex; flex-direction:column; gap:10px; padding:10px; }
   .card { border:1px solid var(--line); border-radius:var(--radius); padding:8px 10px; border-left-width:4px; transition:opacity .15s; }
@@ -77,12 +76,14 @@
   tbody tr:hover td.ref { background:color-mix(in srgb, var(--accent) 12%, #fff); }
   dialog { border:1px solid var(--line); border-radius:10px; padding:16px; width:min(560px,94vw); }
   dialog::backdrop { background:rgba(0,0,0,.35); }
-  dialog form { display:grid; grid-template-columns: 1fr 1fr; gap:8px 14px; }
+  dialog form { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:8px 14px; }
   dialog label { display:flex; flex-direction:column; font-size:12px; color:var(--muted); gap:2px; }
   dialog input, dialog select { padding:4px 6px; }
   dialog .full { grid-column:1 / -1; }
-  dialog .actions { grid-column:1 / -1; display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
-  dialog h2 { margin:0 0 10px; font-size:16px; }
+  dialog .actions { grid-column:1 / -1; display:flex; justify-content:flex-end; gap:8px; margin-top:6px; padding:10px 0 2px; position:sticky; bottom:-16px; background:var(--surface); border-top:1px solid var(--border); }
+  dialog h2 { margin:0 0 10px; font-size:18px; }
+  dialog .namerow { display:grid; grid-template-columns:1fr 72px; gap:8px 14px; align-items:end; }
+  dialog input[type=color] { width:100%; height:32px; padding:2px; cursor:pointer; }
   .hint { font-size:12px; color:var(--muted); }
   dialog { width:min(720px,94vw); max-height:92vh; overflow:auto; }
   dialog textarea { font:12px/1.4 ui-monospace,Menlo,monospace; padding:6px; border:1px solid var(--line); border-radius:6px; width:100%; resize:vertical; color:var(--text); }
@@ -90,6 +91,25 @@
   details.agent summary { cursor:pointer; font-weight:600; }
   details.agent textarea { margin-top:6px; }
   .agentrow { display:flex; gap:10px; align-items:center; margin:6px 0; }
+
+  /* Responsive: bewusst am Ende, damit diese Regeln die Basisregeln überschreiben */
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding:8px; } }
+  @media (max-width: 640px) {
+    header { display:grid; grid-template-columns:repeat(6, 1fr); gap:8px 10px; padding:10px 12px; }
+    header h1 { grid-column:1 / -1; margin:0; }
+    header label { grid-column:span 2; flex-direction:column; align-items:stretch; gap:2px; font-size:11px; }
+    header label select { width:100%; }
+    header .spacer { display:none; }
+    #btnAdd, #btnExport { grid-column:span 3; padding:6px 8px; font-size:13px; }
+    #frames { flex-direction:row; overflow-x:auto; scroll-snap-type:x mandatory; gap:8px; padding:8px; }
+    #frames .card { flex:0 0 84%; scroll-snap-align:start; }
+    #svgwrap { height:52vh; min-height:300px; }
+    #legend { font-size:11px; padding:4px 8px; }
+    table th:first-child, table td:first-child { position:sticky; left:0; z-index:1; background:var(--surface); }
+    table tr.group td:first-child { position:static; background:var(--surface-2); }
+    table tr.group .gl { position:sticky; left:10px; }
+  }
+  @media (pointer: coarse) { #hintNav { display:none; } }
 </style>
 </head>
 <body>
@@ -304,10 +324,14 @@ function drawLine(g, a, b, stroke, w, extra = {}) {
   return el("line", { x1: A[0], y1: A[1], x2: B[0], y2: B[1], stroke, "stroke-width": w,
     "stroke-linecap": "round", "vector-effect": "non-scaling-stroke", ...extra }, g);
 }
+// Beschriftungsgröße in Weltkoordinaten; wächst beim Verkleinern, damit Text lesbar bleibt
+let labelSize = 28;
+let compactLabels = false;
 function drawText(g, p, txt, color, opts = {}) {
   const q = S(p);
-  const t = el("text", { x: q[0], y: q[1], fill: color, "font-size": opts.size || 28, "font-weight": opts.bold ? 600 : 400,
-    "text-anchor": opts.anchor || "start", "paint-order": "stroke", stroke: "#fff", "stroke-width": 7, "stroke-linejoin": "round" }, g);
+  const size = opts.size || labelSize;
+  const t = el("text", { x: q[0], y: q[1], fill: color, "font-size": size, "font-weight": opts.bold ? 600 : 400,
+    "text-anchor": opts.anchor || "start", "paint-order": "stroke", stroke: "#fff", "stroke-width": size / 4, "stroke-linejoin": "round" }, g);
   t.textContent = txt;
   return t;
 }
@@ -378,14 +402,14 @@ function drawDims(root, f, sol, dx) {
 
   // Tretlagerhöhe
   drawLine(g, sh([P.BB[0] - 38, 0]), sh([P.BB[0] - 38, P.BB[1]]), LINE, 1);
-  drawText(g, sh([P.BB[0] - 46, P.BB[1] / 2]), `${m.bbHeight.toFixed(0)}`, col, { anchor: "end", bold: true });
+  if (!compactLabels) drawText(g, sh([P.BB[0] - 46, P.BB[1] / 2]), `${m.bbHeight.toFixed(0)}`, col, { anchor: "end", bold: true });
 
   // Winkel: jeweils auf der freien Seite der Rohre
   drawText(g, sh([P.htTop[0] + 26, P.htTop[1] + 6]), `${m.hta.toFixed(1)}°`, col, { bold: true });
   drawText(g, sh([P.seatTop[0] - 22, P.seatTop[1] - 36]), `${m.sta.toFixed(1)}°`, col, { anchor: "end", bold: true });
 
   // Kettenstrebe: unterhalb der Strebe
-  drawText(g, sh([(P.BB[0] + P.R[0]) / 2, Math.min(P.BB[1], P.R[1]) - 34]), `CS ${f.geo.chainstay}`, col, { anchor: "middle" });
+  if (!compactLabels) drawText(g, sh([(P.BB[0] + P.R[0]) / 2, Math.min(P.BB[1], P.R[1]) - 34]), `CS ${f.geo.chainstay}`, col, { anchor: "middle" });
 }
 
 function bounds(items) {
@@ -419,6 +443,9 @@ function renderSvg(keepView) {
   svg.innerHTML = "";
   const [vx, vy, vw, vh] = state.view;
   svg.setAttribute("viewBox", `${vx} ${vy} ${vw} ${vh}`);
+  const pxPerUnit = svg.clientWidth / vw;
+  labelSize = pxPerUnit > 0 ? Math.max(28, 11 / pxPerUnit) : 28;
+  compactLabels = pxPerUnit > 0 && pxPerUnit < 0.3;
 
   const root = el("g", {}, svg);
   // Boden auf Höhe 0, darunter ein weicher Verlauf
@@ -548,7 +575,7 @@ function renderTable() {
   ordered.forEach(f => { h += `<th class="${f.id === ref.id ? "ref" : ""}"><span class="sw" style="background:${f.color}"></span>${esc(f.name)}${f.id === ref.id ? ` <span class="badge">${T("reference")}</span>` : ""}</th>`; });
   h += "</tr></thead><tbody>";
   ROWS.forEach(row => {
-    if (row.group) { h += `<tr class="group"><td colspan="${ordered.length + 1}">${T(row.group)}</td></tr>`; return; }
+    if (row.group) { h += `<tr class="group"><td colspan="${ordered.length + 1}"><span class="gl">${T(row.group)}</span></td></tr>`; return; }
     if (row.optional && ordered.every(f => valueFor(f, row) === null)) return;
     h += `<tr><td>${T(row.k)}</td>`;
     const refVal = valueFor(ref, row);
@@ -702,17 +729,18 @@ document.getElementById("btnAdd").onclick = () => {
   const opts = sel => WHEELS.map(w => `<option value="${w}" ${w === sel ? "selected" : ""}>${w.replace(".", ",")}"</option>`).join("");
   const form = document.getElementById("addForm");
   form.innerHTML = `
-    <details class="full agent" open>
+    <div class="full namerow">
+      <label>${T("name")}<input name="name" required></label>
+      <label>${T("color")}<input name="color" type="color" value="${PALETTE[customFrames.length % PALETTE.length]}"></label>
+    </div>
+    <details class="full agent" ${window.innerWidth >= 700 ? "open" : ""}>
       <summary>${T("agentTitle")}</summary>
       <div class="hint">${T("agentHint")}</div>
-      <textarea id="agentPrompt" readonly rows="5"></textarea>
+      <textarea id="agentPrompt" readonly rows="3"></textarea>
       <div class="agentrow"><button type="button" id="btnCopyPrompt">${T("copyPrompt")}</button><span class="hint" id="copyState"></span></div>
-      <textarea id="agentReply" rows="4" placeholder="${T("pasteReply")}"></textarea>
+      <textarea id="agentReply" rows="3" placeholder="${T("pasteReply")}"></textarea>
       <div class="agentrow"><button type="button" id="btnApply">${T("applyReply")}</button><span class="hint" id="applyState"></span></div>
     </details>
-    <label class="full">${T("name")}<input name="name" required></label>
-    <label>${T("color")}<input name="color" type="color" value="${PALETTE[customFrames.length % PALETTE.length]}"></label>
-    <span></span>
     <label>${T("front")} ${T("wheelsWord")}<select name="wf">${opts("29")}</select></label>
     <label>${T("rear")} ${T("wheelsWord")}<select name="wr">${opts("27.5")}</select></label>
     ${FIELDS.map(k => `<label>${T("f_" + k)}<input name="${k}" type="number" step="0.1" ${k === "wheelbase" ? "" : "required"} value="${FIELD_DEFAULTS[k] ?? ""}"></label>`).join("")}
@@ -752,6 +780,7 @@ document.getElementById("btnAdd").onclick = () => {
   };
   form.querySelector("#dlgCancel").onclick = () => dlg.close();
   dlg.showModal();
+  nameInput.focus();
 };
 document.getElementById("addForm").addEventListener("submit", e => {
   const fd = new FormData(e.target);
