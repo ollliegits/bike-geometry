@@ -1,55 +1,67 @@
-# bike-geometry
+# Bike Geometry Compare
 
-Visueller Vergleich von Fahrradrahmen-Geometrien (Seitenansicht, maßstabsgetreu, alle Räder auf Höhe 0).
+Compare mountain bike frame geometries side by side – drawn to scale, with all wheels standing on the ground.
 
-## Nutzung
+**👉 Open the app: https://ollliegits.github.io/bike-geometry/**
 
-`index.html` im Browser öffnen – kein Build, keine Abhängigkeiten.
+No installation, no account – it runs entirely in your browser.
 
-- Rahmen ein-/ausblenden, Referenz wählen (Δ-Tabelle zeigt Abweichungen zur Referenz)
-- Laufradgröße (26" / 27,5" / 29") je Rahmen getrennt für vorn und hinten
-- Rahmen neigt sich physikalisch korrekt, wenn die Radgrößen unterschiedlich sind
-- Zoom: `Strg/Cmd` + Mausrad, Verschieben: Ziehen
-- Sprache: Deutsch / Englisch
+## What you can do
 
-## Rahmen hinzufügen
+- **See the difference.** Frames are overlaid in one side view, all in the same scale. Pick one frame as the *reference* and see every other frame's deviation (Δ) in the table.
+- **Try different wheel sizes.** Choose 26", 27.5" or 29" for the front and rear wheel of each frame separately. The frame tilts the way the real bike would, so head angle, seat angle and bottom bracket height update automatically.
+- **Show or hide frames** with the checkbox on each card.
+- **Read the numbers.** Head angle, seat angle, reach, stack, chainstay length, seat tube length, travel, wheel sizes – plus wheelbase, BB height, BB drop, head tube length, fork length, fork offset and trail.
+- **Show dimensions** directly in the drawing, and optionally the compressed suspension travel.
+- Switch the language between **English and German**.
 
-- In [`frames-data.js`](frames-data.js) einen weiteren Eintrag in `frames` ergänzen (Felder siehe Kommentar am Dateianfang), oder
-- im Browser über „Rahmen hinzufügen“ (wird lokal im Browser gespeichert, Export als JSON möglich).
+### Navigating the drawing
 
-### Agent-Unterstützung
-
-Im Dialog „Rahmen hinzufügen“ den Namen eintragen (z. B. `Santa Cruz Bronson (M, 2025)`), den generierten Prompt
-kopieren und in einen beliebigen Recherche-Agenten einfügen. Die JSON-Antwort des Agenten in das Antwortfeld
-einfügen und „In Formular übernehmen“ klicken – danach Werte prüfen und speichern. Erwartete Notation:
-
-```json
-{
-  "name": "Brand Model (XS, 2027)",
-  "wheels": { "front": "27.5", "rear": "26" },
-  "geo": {
-    "reach": 395, "stack": 593, "hta": 64, "sta": 77.5,
-    "seatTube": 360, "chainstay": 434, "bbDrop": 0,
-    "htLength": 110, "forkA2C": 552, "forkOffset": 42,
-    "travelRear": 160, "travelFront": 160, "wheelbase": 1159
-  },
-  "source": "https://…",
-  "notes": "Annahmen, abgeleitete Werte, Abweichungen"
-}
-```
-
-Unbekannte Werte sind `null`; sie bleiben im Formular leer und müssen ergänzt werden.
-
-## Geometriemodell
-
-Tretlager = Ursprung. Hinterachse aus Kettenstrebe und Tretlager-Absenkung, Gabelachse aus Reach/Stack,
-Steuerrohrlänge, Lenkwinkel, Gabel-Einbaulänge und Offset. Anschließend wird der Rahmen so gedreht,
-dass beide Reifen den Boden berühren. Der berechnete Radstand stimmt mit den Herstellerangaben auf 1–3 mm überein.
-
-## Datenstand
-
-| Rahmen | Quelle / Hinweis |
+| Action | How |
 |---|---|
-| Commencal Clash XS (2027) | Commencal-Produktseite; Mullet 27,5" / 26"; „Tretlagerhöhe 0“ als Tretlager auf Höhe der Hinterachse interpretiert |
-| Lapierre Spicy CF XS | Lapierre-Shop, BikeRadar; Gabel-Einbaulänge aus Front Center rückgerechnet, Offset 44 mm angenommen |
-| Kona Hei Hei Trail CR XS | Modelljahr 2019 (27,5", 140/140 mm), Kona-Archiv |
+| Zoom | `Ctrl` / `Cmd` + mouse wheel (or pinch on a trackpad) |
+| Move | Click and drag |
+| Reset view | "Fit view" button |
+
+### Values: selected wheels vs. manufacturer data
+
+The *Values* menu switches the table between:
+
+- **With selected wheels** – values recalculated for the wheel sizes you picked.
+- **Manufacturer data** – the numbers as published by the manufacturer.
+
+## Add your own frame
+
+Click **+ Add frame**. You can either type the numbers in manually, or let an AI assistant do the research:
+
+1. Enter the frame name including size and year, e.g. `Santa Cruz Bronson (M, 2025)`.
+2. Click **Copy prompt** and paste it into any AI assistant with web access (ChatGPT, Gemini, Claude, …).
+3. Paste the assistant's JSON answer into the reply field and click **Apply to form**.
+4. Check the values, then **Save**.
+
+Missing values are left empty so you can fill them in. Your frames are stored in your browser only (nothing is uploaded). Use **Export custom frames** to download them as a JSON file.
+
+## Included frames
+
+| Frame | Wheels (front / rear) | Source |
+|---|---|---|
+| Commencal Clash XS (2027) – *reference* | 27.5" / 26" | [Commencal](https://www.commencal.com/de/enduro-fully-commencal-clash-xs-pure-white-kleiner-rahmen/BT7CLAXSEU1.html) |
+| Lapierre Spicy CF (XS) | 29" / 27.5" | [Lapierre](https://lapierrebikes.com/products/spicy-cf-79-lscua) |
+| Kona Hei Hei Trail CR (XS, model year 2019) | 27.5" / 27.5" | [Kona archive](https://archive.konaworld.com/archive/2019/hei_hei_trail_cr.cfm) |
+
+Each frame card shows notes on assumptions (for example derived or estimated values).
+
+## Good to know
+
+- Geometry data is collected from public sources and may contain errors or derived values. **Always check the manufacturer's chart before buying.**
+- Drawings are a simplified model (frame, fork and wheels in side view). Wheel diameters are approximations (26" ≈ 680 mm, 27.5" ≈ 710 mm, 29" ≈ 745 mm including tyres).
+- With mixed wheel sizes, calculated angles can differ slightly (up to ~0.5°) from the published ones; "Manufacturer data" shows the original numbers.
+- This project is not affiliated with any bike manufacturer.
+
+## Run it locally
+
+Download the repository and open `index.html` in a browser. No build step required.
+
+## For contributors
+
+New frames can also be added permanently in [`frames-data.js`](frames-data.js) – the field definitions are described at the top of that file.
