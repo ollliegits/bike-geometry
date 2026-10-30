@@ -43,7 +43,8 @@ window.FRAME_DATA = {
     {
       id: "lapierre-spicy-cf-xs",
       name: "Lapierre Spicy CF (XS)",
-      material: "Carbon (UD SLI)",
+      material: "Vollcarbon (UD SLI)",
+      weight: 3.2,
       reference: false,
       color: "#2563eb",
       wheels: { front: "29", rear: "27.5" },
@@ -55,14 +56,15 @@ window.FRAME_DATA = {
       },
       source: "https://lapierrebikes.com/products/spicy-cf-79-lscua",
       notes: {
-        de: "Werte für High-Pivot (174 mm). Gabel-Einbaulänge aus Front Center 760 mm (BikeRadar) rückgerechnet, Offset 44 mm angenommen (Fox 38) – bitte prüfen. Sitzrohr XS laut Lapierre-Shop 350 mm (BikeRadar: 370 mm). Federweg vorn = Gabel des 7.9.",
-        en: "Values for high-pivot (174 mm). Fork A2C back-calculated from front centre 760 mm (BikeRadar), 44 mm offset assumed (Fox 38) – please verify. XS seat tube per Lapierre shop 350 mm (BikeRadar: 370 mm). Front travel = fork of the 7.9."
+        de: "Werte für High-Pivot (174 mm). Gabel-Einbaulänge aus Front Center 760 mm (BikeRadar) rückgerechnet, Offset 44 mm angenommen (Fox 38) – bitte prüfen. Sitzrohr XS laut Lapierre-Shop 350 mm (BikeRadar: 370 mm). Federweg vorn = Gabel des 7.9. Gewicht: Rahmen allein, ca. (Nutzerangabe).",
+        en: "Values for high-pivot (174 mm). Fork A2C back-calculated from front centre 760 mm (BikeRadar), 44 mm offset assumed (Fox 38) – please verify. XS seat tube per Lapierre shop 350 mm (BikeRadar: 370 mm). Front travel = fork of the 7.9. Weight: frame only, approx. (user-provided)."
       }
     },
     {
       id: "kona-hei-hei-trail-cr-xs-2019",
       name: "Kona Hei Hei Trail CR (XS)",
-      material: "Carbon (Kona Carbon)",
+      material: "Vollcarbon (Kona Carbon / Race Light Carbon)",
+      weight: 2.45,
       reference: false,
       color: "#16a34a",
       wheels: { front: "27.5", rear: "27.5" },
@@ -74,8 +76,8 @@ window.FRAME_DATA = {
       },
       source: "https://archive.konaworld.com/archive/2019/hei_hei_trail_cr.cfm",
       notes: {
-        de: "Modelljahr 2019 (27,5\"). Das aktuelle Kona Hei Hei CR (29\", 120 mm) wird nicht in XS angeboten – bitte Modelljahr bestätigen.",
-        en: "Model year 2019 (27.5\"). The current Kona Hei Hei CR (29\", 120 mm) is not offered in XS – please confirm model year."
+        de: "Modelljahr 2019 (27,5\"). Das aktuelle Kona Hei Hei CR (29\", 120 mm) wird nicht in XS angeboten – bitte Modelljahr bestätigen. Gewicht: Rahmen allein, ca. (Nutzerangabe).",
+        en: "Model year 2019 (27.5\"). The current Kona Hei Hei CR (29\", 120 mm) is not offered in XS – please confirm model year. Weight: frame only, approx. (user-provided)."
       }
     }
   ]
