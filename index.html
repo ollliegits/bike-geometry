@@ -306,8 +306,8 @@ function drawLine(g, a, b, stroke, w, extra = {}) {
 }
 function drawText(g, p, txt, color, opts = {}) {
   const q = S(p);
-  const t = el("text", { x: q[0], y: q[1], fill: color, "font-size": opts.size || 24, "font-weight": opts.bold ? 600 : 400,
-    "text-anchor": opts.anchor || "start", "paint-order": "stroke", stroke: "#fff", "stroke-width": 4, "stroke-linejoin": "round" }, g);
+  const t = el("text", { x: q[0], y: q[1], fill: color, "font-size": opts.size || 28, "font-weight": opts.bold ? 600 : 400,
+    "text-anchor": opts.anchor || "start", "paint-order": "stroke", stroke: "#fff", "stroke-width": 7, "stroke-linejoin": "round" }, g);
   t.textContent = txt;
   return t;
 }
@@ -322,7 +322,7 @@ function drawBike(root, f, sol, dx, isRef) {
   [[P.R, sol.rR], [P.F, sol.rF]].forEach(([c, r]) => {
     const C = S(sh(c));
     el("circle", { cx: C[0], cy: C[1], r, fill: "none", stroke: col, "stroke-width": isRef ? 3.5 : 2.5, "vector-effect": "non-scaling-stroke" }, g);
-    el("circle", { cx: C[0], cy: C[1], r: r - 58, fill: "none", stroke: col, "stroke-width": 1, "stroke-opacity": .55, "vector-effect": "non-scaling-stroke" }, g);
+    if (isRef) el("circle", { cx: C[0], cy: C[1], r: r - 58, fill: "none", stroke: col, "stroke-width": 1, "stroke-opacity": .45, "vector-effect": "non-scaling-stroke" }, g);
     el("circle", { cx: C[0], cy: C[1], r: 6, fill: col }, g);
   });
 
@@ -335,8 +335,8 @@ function drawBike(root, f, sol, dx, isRef) {
     ];
     ghosts.forEach(([to, from, r]) => {
       const C = S(sh(to));
-      el("circle", { cx: C[0], cy: C[1], r, fill: "none", stroke: col, "stroke-width": 1.2, "stroke-dasharray": "5 5", "stroke-opacity": .6, "vector-effect": "non-scaling-stroke" }, g);
-      drawLine(g, sh(from), sh(to), col, 7, { "stroke-opacity": .35, "stroke-linecap": "butt" });
+      el("circle", { cx: C[0], cy: C[1], r, fill: "none", stroke: col, "stroke-width": 1, "stroke-dasharray": "4 6", "stroke-opacity": .32, "vector-effect": "non-scaling-stroke" }, g);
+      drawLine(g, sh(from), sh(to), col, 7, { "stroke-opacity": .3, "stroke-linecap": "butt" });
     });
   }
 
@@ -360,31 +360,32 @@ function drawBike(root, f, sol, dx, isRef) {
 function drawDims(root, f, sol, dx) {
   const col = f.color, { P } = sol, sh = p => [p[0] + dx, p[1]];
   const g = el("g", {}, root);
-  const dash = { "stroke-dasharray": "7 5" };
+  const LINE = "#5b6b72";
+  const dash = { "stroke-dasharray": "4 4" };
   const m = sol.m;
 
   // Reach / Stack
-  drawLine(g, sh(P.BB), sh([P.htTop[0], P.BB[1]]), col, 1.5, dash);
-  drawLine(g, sh([P.htTop[0], P.BB[1]]), sh(P.htTop), col, 1.5, dash);
-  drawText(g, sh([(P.BB[0] + P.htTop[0]) / 2, P.BB[1] - 26]), `Reach ${m.reach.toFixed(0)}`, col, { anchor: "middle", bold: true });
-  drawText(g, sh([P.htTop[0] + 12, (P.BB[1] + P.htTop[1]) / 2]), `Stack ${m.stack.toFixed(0)}`, col, { bold: true });
+  drawLine(g, sh(P.BB), sh([P.htTop[0], P.BB[1]]), LINE, 1, dash);
+  drawLine(g, sh([P.htTop[0], P.BB[1]]), sh(P.htTop), LINE, 1, dash);
+  drawText(g, sh([(P.BB[0] + P.htTop[0]) / 2, P.BB[1] - 30]), `Reach ${m.reach.toFixed(0)}`, col, { anchor: "middle", bold: true });
+  drawText(g, sh([P.htTop[0] - 12, (P.BB[1] + P.htTop[1]) / 2]), `Stack ${m.stack.toFixed(0)}`, col, { anchor: "end", bold: true });
 
   // Radstand unter Boden
   const y = -45;
-  drawLine(g, sh([P.R[0], y]), sh([P.F[0], y]), col, 1.5);
-  [P.R[0], P.F[0]].forEach(x => drawLine(g, sh([x, y - 12]), sh([x, y + 12]), col, 1.5));
-  drawText(g, sh([(P.R[0] + P.F[0]) / 2, y - 22]), `${T("wheelbase")} ${m.wheelbase.toFixed(0)}`, col, { anchor: "middle", bold: true });
+  drawLine(g, sh([P.R[0], y]), sh([P.F[0], y]), LINE, 1);
+  [P.R[0], P.F[0]].forEach(x => drawLine(g, sh([x, y - 12]), sh([x, y + 12]), LINE, 1));
+  drawText(g, sh([(P.R[0] + P.F[0]) / 2, y - 30]), `${T("wheelbase")} ${m.wheelbase.toFixed(0)}`, col, { anchor: "middle", bold: true });
 
   // Tretlagerhöhe
-  drawLine(g, sh([P.BB[0] - 38, 0]), sh([P.BB[0] - 38, P.BB[1]]), col, 1.5);
+  drawLine(g, sh([P.BB[0] - 38, 0]), sh([P.BB[0] - 38, P.BB[1]]), LINE, 1);
   drawText(g, sh([P.BB[0] - 46, P.BB[1] / 2]), `${m.bbHeight.toFixed(0)}`, col, { anchor: "end", bold: true });
 
-  // Winkel
-  drawText(g, sh([P.htTop[0] + 12, P.htTop[1] + 30]), `${m.hta.toFixed(1)}°`, col, { bold: true });
-  drawText(g, sh([P.seatTop[0] - 14, P.seatTop[1] + 30]), `${m.sta.toFixed(1)}°`, col, { anchor: "end", bold: true });
+  // Winkel: jeweils auf der freien Seite der Rohre
+  drawText(g, sh([P.htTop[0] + 26, P.htTop[1] + 6]), `${m.hta.toFixed(1)}°`, col, { bold: true });
+  drawText(g, sh([P.seatTop[0] - 22, P.seatTop[1] - 36]), `${m.sta.toFixed(1)}°`, col, { anchor: "end", bold: true });
 
-  // Kettenstrebe
-  drawText(g, sh([(P.BB[0] + P.R[0]) / 2, Math.min(P.BB[1], P.R[1]) - 40 + 62]), `CS ${f.geo.chainstay}`, col, { anchor: "middle" });
+  // Kettenstrebe: unterhalb der Strebe
+  drawText(g, sh([(P.BB[0] + P.R[0]) / 2, Math.min(P.BB[1], P.R[1]) - 34]), `CS ${f.geo.chainstay}`, col, { anchor: "middle" });
 }
 
 function bounds(items) {
@@ -420,9 +421,13 @@ function renderSvg(keepView) {
   svg.setAttribute("viewBox", `${vx} ${vy} ${vw} ${vh}`);
 
   const root = el("g", {}, svg);
-  // Bodenlinie auf Höhe 0
-  el("rect", { x: vx - 5000, y: 0, width: vw + 10000, height: 4000, fill: "#f3f4f6" }, root);
-  el("line", { x1: vx - 5000, x2: vx + vw + 5000, y1: 0, y2: 0, stroke: "#374151", "stroke-width": 2, "vector-effect": "non-scaling-stroke" }, root);
+  // Boden auf Höhe 0, darunter ein weicher Verlauf
+  const defs = el("defs", {}, root);
+  const gg = el("linearGradient", { id: "ground", gradientUnits: "userSpaceOnUse", x1: 0, y1: 0, x2: 0, y2: 260 }, defs);
+  el("stop", { offset: 0, "stop-color": "#dfe9e8" }, gg);
+  el("stop", { offset: 1, "stop-color": "#f7fafa" }, gg);
+  el("rect", { x: vx - 5000, y: 0, width: vw + 10000, height: 4000, fill: "url(#ground)" }, root);
+  el("line", { x1: vx - 5000, x2: vx + vw + 5000, y1: 0, y2: 0, stroke: "#4b5b62", "stroke-width": 2, "vector-effect": "non-scaling-stroke" }, root);
 
   // Referenz zuletzt zeichnen (oben)
   [...items].sort((a, b) => (a.f.id === ref.id) - (b.f.id === ref.id)).forEach(it => drawBike(root, it.f, it.sol, it.dx, it.f.id === ref.id));
