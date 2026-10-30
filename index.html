@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bike Geometry Compare</title>
+<style>
+  :root { --bg:#f6f7f9; --panel:#fff; --line:#e3e6ea; --text:#1f2937; --muted:#6b7280; --accent:#2563eb; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:var(--text); background:var(--bg); }
+  header { display:flex; flex-wrap:wrap; gap:12px 20px; align-items:center; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--line); }
+  header h1 { font-size:16px; margin:0 8px 0 0; }
+  header label { display:inline-flex; gap:6px; align-items:center; color:var(--muted); }
+  header select, header button, dialog button, dialog select, dialog input { font:inherit; }
+  header button, dialog button { padding:4px 10px; border:1px solid var(--line); background:#fff; border-radius:6px; cursor:pointer; }
+  header button:hover, dialog button:hover { background:#f0f2f5; }
+  .spacer { flex:1; }
+  main { display:grid; grid-template-columns: 320px 1fr; gap:12px; padding:12px; align-items:start; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; }
+  #frames { display:flex; flex-direction:column; gap:10px; padding:10px; }
+  .card { border:1px solid var(--line); border-radius:8px; padding:8px 10px; border-left-width:6px; }
+  .card.hidden { opacity:.5; }
+  .card h3 { margin:0; font-size:14px; display:flex; gap:6px; align-items:center; }
+  .card h3 span.name { flex:1; }
+  .badge { font-size:11px; padding:1px 6px; border-radius:10px; background:#111827; color:#fff; }
+  .row { display:flex; gap:10px; align-items:center; margin-top:6px; flex-wrap:wrap; }
+  .row label { color:var(--muted); display:inline-flex; gap:4px; align-items:center; }
+  .note { font-size:12px; color:var(--muted); margin-top:6px; }
+  .note a { color:var(--accent); }
+  .iconbtn { border:none; background:none; cursor:pointer; color:var(--muted); font-size:16px; padding:0 4px; }
+  #stage { padding:0; overflow:hidden; }
+  #svgwrap { position:relative; height:min(62vh,640px); min-height:360px; background:#fff; }
+  #svg { width:100%; height:100%; display:block; cursor:grab; touch-action:none; }
+  #legend { position:absolute; top:8px; left:12px; font-size:13px; pointer-events:none; background:rgba(255,255,255,.85); padding:4px 8px; border-radius:6px; }
+  #legend i { display:inline-block; width:18px; height:5px; margin-right:6px; vertical-align:middle; }
+  #svg.drag { cursor:grabbing; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:8px 18px; padding:8px 12px; border-top:1px solid var(--line); align-items:center; color:var(--muted); }
+  .toolbar label { display:inline-flex; gap:5px; align-items:center; }
+  #tablewrap { padding:8px 12px 12px; overflow-x:auto; border-top:1px solid var(--line); }
+  table { border-collapse:collapse; width:100%; min-width:520px; }
+  th, td { padding:5px 10px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th:first-child, td:first-child { text-align:left; }
+  th { font-weight:600; vertical-align:bottom; }
+  th .sw { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; }
+  tr.group td { background:#f3f4f6; font-weight:600; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+  .delta { color:var(--muted); font-size:12px; margin-left:6px; }
+  .delta.pos { color:#b45309; } .delta.neg { color:#1d4ed8; }
+  td.ref { background:#fafafa; }
+  dialog { border:1px solid var(--line); border-radius:10px; padding:16px; width:min(560px,94vw); }
+  dialog::backdrop { background:rgba(0,0,0,.35); }
+  dialog form { display:grid; grid-template-columns: 1fr 1fr; gap:8px 14px; }
+  dialog label { display:flex; flex-direction:column; font-size:12px; color:var(--muted); gap:2px; }
+  dialog input, dialog select { padding:4px 6px; border:1px solid var(--line); border-radius:6px; color:var(--text); }
+  dialog .full { grid-column:1 / -1; }
+  dialog .actions { grid-column:1 / -1; display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
+  dialog h2 { margin:0 0 10px; font-size:16px; }
+  .hint { font-size:12px; color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title"></h1>
+  <label><span id="lblLang"></span>
+    <select id="lang"><option value="de">Deutsch</option><option value="en">English</option></select>
+  </label>
+  <label><span id="lblAnchor"></span>
+    <select id="anchor"></select>
+  </label>
+  <label><span id="lblMode"></span>
+    <select id="mode"></select>
+  </label>
+  <span class="spacer"></span>
+  <button id="btnAdd"></button>
+  <button id="btnExport"></button>
+</header>
+
+<main>
+  <section class="panel" id="frames"></section>
+
+  <section class="panel" id="stage">
+    <div id="svgwrap"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg><div id="legend"></div></div>
+    <div class="toolbar">
+      <label><input type="checkbox" id="optTravel"><span id="lblTravel"></span></label>
+      <label><input type="checkbox" id="optDims"><span id="lblDims"></span></label>
+      <label><span id="lblDimFrame"></span><select id="dimFrame"></select></label>
+      <button id="btnFit" style="margin-left:auto"></button>
+      <span class="hint" id="hintNav"></span>
+    </div>
+    <div id="tablewrap"></div>
+  </section>
+</main>
+
+<dialog id="dlg">
+  <h2 id="dlgTitle"></h2>
+  <form method="dialog" id="addForm"></form>
+</dialog>
+
+<script src="frames-data.js"></script>
+<script>
+"use strict";
+
+/* ---------- i18n ---------- */
+const I18N = {
+  de: {
+    title: "Rahmengeometrie-Vergleich", lang: "Sprache", anchor: "Ausrichtung", mode: "Werte",
+    anchors: { rear: "Hinterachse", bb: "Tretlager", front: "Vorderachse" },
+    modes: { selected: "Mit gewählten Laufrädern", factory: "Herstellerangaben" },
+    add: "+ Rahmen hinzufügen", export: "Eigene Rahmen exportieren",
+    travel: "Federweg anzeigen (eingefedert)", dims: "Bemaßung", dimFrame: "für", fit: "Ansicht einpassen",
+    nav: "Strg/Cmd + Mausrad: Zoom · Ziehen: verschieben",
+    reference: "Referenz", setRef: "Als Referenz", front: "Vorn", rear: "Hinten", source: "Quelle", remove: "Entfernen",
+    show: "anzeigen", wheelsWord: "Laufräder", custom: "eigen",
+    measure: "Maß",
+    g_main: "Hauptmaße", g_more: "Weitere Maße",
+    hta: "Lenkwinkel", sta: "Sitzwinkel", reach: "Reach", stack: "Stack", chainstay: "Kettenstrebenlänge",
+    seatTube: "Sitzrohrlänge", travelRear: "Federweg hinten", travelFront: "Federweg vorn", wheels: "Laufräder (v / h)",
+    wheelbase: "Radstand", bbHeight: "Tretlagerhöhe (über Boden)", bbDrop: "Tretlager-Absenkung", htLength: "Steuerrohrlänge",
+    forkA2C: "Gabel-Einbaulänge", forkOffset: "Gabel-Offset", trail: "Nachlauf", tilt: "Rahmenneigung (Nase hoch +)",
+    dlgTitle: "Rahmen hinzufügen", name: "Name", color: "Farbe", cancel: "Abbrechen", save: "Speichern",
+    deltaNote: "Δ = Abweichung zur Referenz.",
+    dlgHint: "Maße in mm / Grad. Tretlager-Absenkung: positiv = Tretlager unterhalb der Hinterachse.",
+    f_reach: "Reach", f_stack: "Stack", f_hta: "Lenkwinkel (°)", f_sta: "Sitzwinkel (°)", f_seatTube: "Sitzrohr",
+    f_chainstay: "Kettenstrebe", f_bbDrop: "Tretlager-Absenkung", f_htLength: "Steuerrohrlänge",
+    f_forkA2C: "Gabel-Einbaulänge", f_forkOffset: "Gabel-Offset", f_travelRear: "Federweg hinten",
+    f_travelFront: "Federweg vorn", f_wheelbase: "Radstand (optional)",
+    exportEmpty: "Keine eigenen Rahmen vorhanden."
+  },
+  en: {
+    title: "Frame Geometry Comparison", lang: "Language", anchor: "Alignment", mode: "Values",
+    anchors: { rear: "Rear axle", bb: "Bottom bracket", front: "Front axle" },
+    modes: { selected: "With selected wheels", factory: "Manufacturer data" },
+    add: "+ Add frame", export: "Export custom frames",
+    travel: "Show travel (compressed)", dims: "Dimensions", dimFrame: "for", fit: "Fit view",
+    nav: "Ctrl/Cmd + wheel: zoom · Drag: pan",
+    reference: "Reference", setRef: "Make reference", front: "Front", rear: "Rear", source: "Source", remove: "Remove",
+    show: "show", wheelsWord: "Wheels", custom: "custom",
+    measure: "Measure",
+    g_main: "Main measures", g_more: "Additional measures",
+    hta: "Head angle", sta: "Seat angle", reach: "Reach", stack: "Stack", chainstay: "Chainstay length",
+    seatTube: "Seat tube length", travelRear: "Rear travel", travelFront: "Front travel", wheels: "Wheels (f / r)",
+    wheelbase: "Wheelbase", bbHeight: "BB height (above ground)", bbDrop: "BB drop", htLength: "Head tube length",
+    forkA2C: "Fork axle-to-crown", forkOffset: "Fork offset", trail: "Trail", tilt: "Frame tilt (nose up +)",
+    dlgTitle: "Add frame", name: "Name", color: "Colour", cancel: "Cancel", save: "Save",
+    deltaNote: "Δ = difference to reference.",
+    dlgHint: "Values in mm / degrees. BB drop: positive = bottom bracket below rear axle.",
+    f_reach: "Reach", f_stack: "Stack", f_hta: "Head angle (°)", f_sta: "Seat angle (°)", f_seatTube: "Seat tube",
+    f_chainstay: "Chainstay", f_bbDrop: "BB drop", f_htLength: "Head tube length",
+    f_forkA2C: "Fork axle-to-crown", f_forkOffset: "Fork offset", f_travelRear: "Rear travel",
+    f_travelFront: "Front travel", f_wheelbase: "Wheelbase (optional)",
+    exportEmpty: "No custom frames yet."
+  }
+};
+
+/* ---------- state ---------- */
+const WHEELS = Object.keys(FRAME_DATA.wheelOD);
+const OD = FRAME_DATA.wheelOD;
+const LS_CUSTOM = "bikegeo.custom.v1";
+const LS_STATE = "bikegeo.state.v1";
+const PALETTE = ["#dc2626","#9333ea","#ea580c","#0891b2","#be185d","#65a30d"];
+
+const loadJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+const customFrames = loadJSON(LS_CUSTOM, []);
+const saved = loadJSON(LS_STATE, {});
+
+const state = {
+  lang: saved.lang || ((navigator.language || "de").startsWith("de") ? "de" : "en"),
+  anchor: saved.anchor || "rear",
+  mode: saved.mode || "selected",
+  travel: saved.travel ?? true,
+  dims: saved.dims ?? true,
+  dimFrame: saved.dimFrame || null,
+  ref: saved.ref || null,
+  visible: saved.visible || {},
+  wheels: saved.wheels || {},
+  view: null
+};
+
+const allFrames = () => [...FRAME_DATA.frames, ...customFrames.map(f => ({ ...f, custom: true }))];
+const frameById = id => allFrames().find(f => f.id === id);
+const T = k => I18N[state.lang][k] ?? k;
+
+function persist() {
+  const { lang, anchor, mode, travel, dims, dimFrame, ref, visible, wheels } = state;
+  localStorage.setItem(LS_STATE, JSON.stringify({ lang, anchor, mode, travel, dims, dimFrame, ref, visible, wheels }));
+}
+function wheelsOf(f) { return state.wheels[f.id] || f.wheels; }
+function isVisible(f) { return state.visible[f.id] !== false; }
+function refFrame() {
+  const frames = allFrames();
+  return frames.find(f => f.id === state.ref) || frames.find(f => f.reference) || frames[0];
+}
+
+/* ---------- geometry ---------- */
+const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+
+// Rahmen steht mit beiden Rädern auf Höhe 0; Hinterachse sitzt bei x = 0
+function computeFrame(f, wheelF, wheelR) {
+  const g = f.geo;
+  const rF = OD[wheelF] / 2, rR = OD[wheelR] / 2;
+  const th = rad(g.hta);
+  const axis = [Math.cos(th), -Math.sin(th)];
+  const perp = [Math.sin(th), Math.cos(th)];
+
+  const R = [-Math.sqrt(g.chainstay ** 2 - g.bbDrop ** 2), g.bbDrop];
+  const htTop = [g.reach, g.stack];
+  const htBot = [htTop[0] + g.htLength * axis[0], htTop[1] + g.htLength * axis[1]];
+  const F = [htBot[0] + g.forkA2C * axis[0] + g.forkOffset * perp[0],
+             htBot[1] + g.forkA2C * axis[1] + g.forkOffset * perp[1]];
+  const sta = rad(g.sta);
+  const seatTop = [-g.seatTube * Math.cos(sta), g.seatTube * Math.sin(sta)];
+
+  const v = [F[0] - R[0], F[1] - R[1]];
+  const L = Math.hypot(v[0], v[1]);
+  const phi = Math.asin(Math.max(-1, Math.min(1, (rF - rR) / L))) - Math.atan2(v[1], v[0]);
+  const c = Math.cos(phi), s = Math.sin(phi);
+  const T = p => [(p[0] - R[0]) * c - (p[1] - R[1]) * s, (p[0] - R[0]) * s + (p[1] - R[1]) * c + rR];
+
+  const P = { R: T(R), F: T(F), BB: T([0, 0]), htTop: T(htTop), htBot: T(htBot), seatTop: T(seatTop) };
+  const a = [axis[0] * c - axis[1] * s, axis[0] * s + axis[1] * c];
+  const sd = [-Math.cos(sta) * c - Math.sin(sta) * s, -Math.cos(sta) * s + Math.sin(sta) * c];
+  const tGround = P.htBot[1] / -a[1];
+  const trail = P.F[0] - (P.htBot[0] + tGround * a[0]);
+
+  return {
+    P, rF, rR, a, sd,
+    m: {
+      hta: g.hta - deg(phi), sta: g.sta - deg(phi),
+      reach: P.htTop[0] - P.BB[0], stack: P.htTop[1] - P.BB[1],
+      wheelbase: P.F[0] - P.R[0], bbHeight: P.BB[1], trail, tilt: deg(phi)
+    }
+  };
+}
+
+function solved(f, wheels) { return computeFrame(f, wheels.front, wheels.rear); }
+
+/* ---------- SVG rendering ---------- */
+const svg = document.getElementById("svg");
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, parent) => {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+};
+const S = p => [p[0], -p[1]]; // Welt (y oben) -> SVG (y unten)
+
+function anchorShift(sol) {
+  if (state.anchor === "bb") return -sol.P.BB[0];
+  if (state.anchor === "front") return -sol.P.F[0];
+  return -sol.P.R[0];
+}
+
+function drawLine(g, a, b, stroke, w, extra = {}) {
+  const A = S(a), B = S(b);
+  return el("line", { x1: A[0], y1: A[1], x2: B[0], y2: B[1], stroke, "stroke-width": w,
+    "stroke-linecap": "round", "vector-effect": "non-scaling-stroke", ...extra }, g);
+}
+function drawText(g, p, txt, color, opts = {}) {
+  const q = S(p);
+  const t = el("text", { x: q[0], y: q[1], fill: color, "font-size": opts.size || 24, "font-weight": opts.bold ? 600 : 400,
+    "text-anchor": opts.anchor || "start", "paint-order": "stroke", stroke: "#fff", "stroke-width": 4, "stroke-linejoin": "round" }, g);
+  t.textContent = txt;
+  return t;
+}
+
+function drawBike(root, f, sol, dx, isRef) {
+  const col = f.color, { P } = sol;
+  const sh = p => [p[0] + dx, p[1]];
+  const g = el("g", {}, root);
+  const w = isRef ? 4 : 3;
+
+  // Räder
+  [[P.R, sol.rR], [P.F, sol.rF]].forEach(([c, r]) => {
+    const C = S(sh(c));
+    el("circle", { cx: C[0], cy: C[1], r, fill: "none", stroke: col, "stroke-width": isRef ? 3.5 : 2.5, "vector-effect": "non-scaling-stroke" }, g);
+    el("circle", { cx: C[0], cy: C[1], r: r - 58, fill: "none", stroke: col, "stroke-width": 1, "stroke-opacity": .55, "vector-effect": "non-scaling-stroke" }, g);
+    el("circle", { cx: C[0], cy: C[1], r: 6, fill: col }, g);
+  });
+
+  // Federweg (eingefedert, gestrichelt)
+  if (state.travel) {
+    const gt = f.geo;
+    const ghosts = [
+      [[P.R[0], P.R[1] + gt.travelRear], P.R, sol.rR, gt.travelRear],
+      [[P.F[0] - sol.a[0] * gt.travelFront, P.F[1] - sol.a[1] * gt.travelFront], P.F, sol.rF, gt.travelFront]
+    ];
+    ghosts.forEach(([to, from, r]) => {
+      const C = S(sh(to));
+      el("circle", { cx: C[0], cy: C[1], r, fill: "none", stroke: col, "stroke-width": 1.2, "stroke-dasharray": "5 5", "stroke-opacity": .6, "vector-effect": "non-scaling-stroke" }, g);
+      drawLine(g, sh(from), sh(to), col, 7, { "stroke-opacity": .35, "stroke-linecap": "butt" });
+    });
+  }
+
+  // Rahmen
+  const seatPoint = [P.BB[0] + (P.seatTop[0] - P.BB[0]) * .9, P.BB[1] + (P.seatTop[1] - P.BB[1]) * .9];
+  const post = [P.seatTop[0] + sol.sd[0] * 110, P.seatTop[1] + sol.sd[1] * 110];
+  const lines = [
+    [P.BB, P.R, w], [P.R, seatPoint, w - 1], [P.BB, P.seatTop, w], [P.seatTop, P.htTop, w],
+    [P.BB, P.htBot, w + 1], [P.htBot, P.htTop, w + 4], [P.htBot, P.F, w - 0.5]
+  ];
+  lines.forEach(([a, b, lw]) => drawLine(g, sh(a), sh(b), col, lw));
+  drawLine(g, sh(P.seatTop), sh(post), col, 2, { "stroke-dasharray": "2 5" });
+  drawLine(g, sh([post[0] - 55, post[1] + 6]), sh([post[0] + 55, post[1] + 6]), col, 4);
+
+  // Lenkachse (gestrichelt bis zum Boden)
+  const tg = P.htBot[1] / -sol.a[1];
+  drawLine(g, sh(P.htTop), sh([P.htBot[0] + tg * sol.a[0], 0]), col, 1, { "stroke-dasharray": "6 6", "stroke-opacity": .5 });
+  return g;
+}
+
+function drawDims(root, f, sol, dx) {
+  const col = f.color, { P } = sol, sh = p => [p[0] + dx, p[1]];
+  const g = el("g", {}, root);
+  const dash = { "stroke-dasharray": "7 5" };
+  const m = sol.m;
+
+  // Reach / Stack
+  drawLine(g, sh(P.BB), sh([P.htTop[0], P.BB[1]]), col, 1.5, dash);
+  drawLine(g, sh([P.htTop[0], P.BB[1]]), sh(P.htTop), col, 1.5, dash);
+  drawText(g, sh([(P.BB[0] + P.htTop[0]) / 2, P.BB[1] - 26]), `Reach ${m.reach.toFixed(0)}`, col, { anchor: "middle", bold: true });
+  drawText(g, sh([P.htTop[0] + 12, (P.BB[1] + P.htTop[1]) / 2]), `Stack ${m.stack.toFixed(0)}`, col, { bold: true });
+
+  // Radstand unter Boden
+  const y = -45;
+  drawLine(g, sh([P.R[0], y]), sh([P.F[0], y]), col, 1.5);
+  [P.R[0], P.F[0]].forEach(x => drawLine(g, sh([x, y - 12]), sh([x, y + 12]), col, 1.5));
+  drawText(g, sh([(P.R[0] + P.F[0]) / 2, y - 22]), `${T("wheelbase")} ${m.wheelbase.toFixed(0)}`, col, { anchor: "middle", bold: true });
+
+  // Tretlagerhöhe
+  drawLine(g, sh([P.BB[0] - 38, 0]), sh([P.BB[0] - 38, P.BB[1]]), col, 1.5);
+  drawText(g, sh([P.BB[0] - 46, P.BB[1] / 2]), `${m.bbHeight.toFixed(0)}`, col, { anchor: "end", bold: true });
+
+  // Winkel
+  drawText(g, sh([P.htTop[0] + 12, P.htTop[1] + 30]), `${m.hta.toFixed(1)}°`, col, { bold: true });
+  drawText(g, sh([P.seatTop[0] - 14, P.seatTop[1] + 30]), `${m.sta.toFixed(1)}°`, col, { anchor: "end", bold: true });
+
+  // Kettenstrebe
+  drawText(g, sh([(P.BB[0] + P.R[0]) / 2, Math.min(P.BB[1], P.R[1]) - 40 + 62]), `CS ${f.geo.chainstay}`, col, { anchor: "middle" });
+}
+
+function bounds(items) {
+  let x0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  items.forEach(({ sol, dx }) => {
+    x0 = Math.min(x0, sol.P.R[0] - sol.rR + dx);
+    x1 = Math.max(x1, sol.P.F[0] + sol.rF + dx);
+    y1 = Math.max(y1, sol.P.F[1] + sol.rF, sol.P.seatTop[1] + 140, sol.P.htTop[1] + 120);
+  });
+  return [x0, x1, y1];
+}
+
+function fitView(items) {
+  if (!items.length) { state.view = [-500, -900, 2000, 1100]; return; }
+  const [x0, x1, y1] = bounds(items);
+  const pad = 80, w = x1 - x0 + pad * 2, h = y1 + 100 + pad * 2;
+  state.view = [x0 - pad, -(y1 + pad), w, h];
+}
+
+let items = [];
+function renderSvg(keepView) {
+  const frames = allFrames().filter(isVisible);
+  const ref = refFrame();
+  items = frames.map(f => {
+    const sol = solved(f, wheelsOf(f));
+    return { f, sol, dx: 0 };
+  });
+  items.forEach(it => { it.dx = anchorShift(it.sol); });
+  if (!keepView || !state.view) fitView(items);
+
+  svg.innerHTML = "";
+  const [vx, vy, vw, vh] = state.view;
+  svg.setAttribute("viewBox", `${vx} ${vy} ${vw} ${vh}`);
+
+  const root = el("g", {}, svg);
+  // Bodenlinie auf Höhe 0
+  el("rect", { x: vx - 5000, y: 0, width: vw + 10000, height: 4000, fill: "#f3f4f6" }, root);
+  el("line", { x1: vx - 5000, x2: vx + vw + 5000, y1: 0, y2: 0, stroke: "#374151", "stroke-width": 2, "vector-effect": "non-scaling-stroke" }, root);
+
+  // Referenz zuletzt zeichnen (oben)
+  [...items].sort((a, b) => (a.f.id === ref.id) - (b.f.id === ref.id)).forEach(it => drawBike(root, it.f, it.sol, it.dx, it.f.id === ref.id));
+
+  if (state.dims) {
+    const target = items.find(i => i.f.id === state.dimFrame) || items.find(i => i.f.id === ref.id) || items[0];
+    if (target) drawDims(root, target.f, target.sol, target.dx);
+  }
+  document.getElementById("legend").innerHTML = items.map(it => {
+    const wh = wheelsOf(it.f);
+    return `<div style="color:${it.f.color};font-weight:${it.f.id === ref.id ? 700 : 500}"><i style="background:${it.f.color}"></i>${esc(it.f.name)} · ${wh.front}" / ${wh.rear}"</div>`;
+  }).join("");
+}
+
+/* ---------- pan & zoom ---------- */
+let drag = null;
+svg.addEventListener("wheel", e => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  e.preventDefault();
+  const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  const k = e.deltaY > 0 ? 1.12 : 1 / 1.12;
+  const [x, y, w, h] = state.view;
+  state.view = [p.x - (p.x - x) * k, p.y - (p.y - y) * k, w * k, h * k];
+  renderSvg(true);
+}, { passive: false });
+svg.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY, view: [...state.view] }; svg.setPointerCapture(e.pointerId); svg.classList.add("drag"); });
+svg.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const k = svg.getScreenCTM().a;
+  state.view = [drag.view[0] - (e.clientX - drag.x) / k, drag.view[1] - (e.clientY - drag.y) / k, drag.view[2], drag.view[3]];
+  svg.setAttribute("viewBox", state.view.join(" "));
+});
+svg.addEventListener("pointerup", () => { drag = null; svg.classList.remove("drag"); renderSvg(true); });
+
+/* ---------- sidebar ---------- */
+function renderCards() {
+  const host = document.getElementById("frames");
+  host.innerHTML = "";
+  const ref = refFrame();
+  allFrames().forEach(f => {
+    const wh = wheelsOf(f);
+    const card = document.createElement("div");
+    card.className = "card" + (isVisible(f) ? "" : " hidden");
+    card.style.borderLeftColor = f.color;
+    const opts = sel => WHEELS.map(w => `<option value="${w}" ${w === sel ? "selected" : ""}>${w.replace(".", ",")}"</option>`).join("");
+    card.innerHTML = `
+      <h3>
+        <input type="checkbox" data-act="vis" ${isVisible(f) ? "checked" : ""} title="${T("show")}">
+        <span class="name"></span>
+        ${f.id === ref.id ? `<span class="badge">${T("reference")}</span>` : ""}
+        ${f.custom ? `<button class="iconbtn" data-act="del" title="${T("remove")}">×</button>` : ""}
+      </h3>
+      <div class="row">
+        <label>${T("front")}<select data-act="wf">${opts(wh.front)}</select></label>
+        <label>${T("rear")}<select data-act="wr">${opts(wh.rear)}</select></label>
+        ${f.id === ref.id ? "" : `<button data-act="ref">${T("setRef")}</button>`}
+      </div>
+      ${(f.notes && f.notes[state.lang]) ? `<div class="note"></div>` : ""}
+      ${f.source ? `<div class="note"><a href="${f.source}" target="_blank" rel="noopener">${T("source")}</a></div>` : ""}`;
+    card.querySelector(".name").textContent = f.name;
+    const note = card.querySelector(".note:not(:has(a))");
+    if (note) note.textContent = f.notes[state.lang];
+    card.addEventListener("change", e => {
+      const act = e.target.dataset.act;
+      if (act === "vis") state.visible[f.id] = e.target.checked;
+      if (act === "wf" || act === "wr") state.wheels[f.id] = { ...wheelsOf(f), [act === "wf" ? "front" : "rear"]: e.target.value };
+      persist(); renderAll(act === "vis" ? false : true);
+    });
+    card.addEventListener("click", e => {
+      const act = e.target.dataset.act;
+      if (act === "ref") { state.ref = f.id; persist(); renderAll(true); }
+      if (act === "del") {
+        const i = customFrames.findIndex(c => c.id === f.id);
+        customFrames.splice(i, 1);
+        localStorage.setItem(LS_CUSTOM, JSON.stringify(customFrames));
+        renderAll(false);
+      }
+    });
+    host.appendChild(card);
+  });
+}
+
+/* ---------- table ---------- */
+const ROWS = [
+  { group: "g_main" },
+  { k: "hta", unit: "°", dec: 1, dyn: true }, { k: "sta", unit: "°", dec: 1, dyn: true },
+  { k: "reach", unit: " mm", dyn: true }, { k: "stack", unit: " mm", dyn: true },
+  { k: "chainstay", unit: " mm" }, { k: "seatTube", unit: " mm" },
+  { k: "travelRear", unit: " mm" }, { k: "travelFront", unit: " mm" }, { k: "wheels", text: true },
+  { group: "g_more" },
+  { k: "wheelbase", unit: " mm", dyn: true }, { k: "bbHeight", unit: " mm", derived: true },
+  { k: "bbDrop", unit: " mm" }, { k: "htLength", unit: " mm" }, { k: "forkA2C", unit: " mm" },
+  { k: "forkOffset", unit: " mm" }, { k: "trail", unit: " mm", derived: true }, { k: "tilt", unit: "°", dec: 1, derived: true }
+];
+
+function valueFor(f, row) {
+  const wheels = state.mode === "selected" ? wheelsOf(f) : f.wheels;
+  if (row.text) return `${wheels.front}" / ${wheels.rear}"`;
+  if (row.dyn || row.derived) {
+    const sol = solved(f, wheels);
+    if (state.mode === "factory" && row.dyn && row.k !== "wheelbase") return f.geo[row.k];
+    if (state.mode === "factory" && row.k === "wheelbase" && f.geo.wheelbase) return f.geo.wheelbase;
+    return sol.m[row.k];
+  }
+  return f.geo[row.k];
+}
+
+function renderTable() {
+  const ref = refFrame();
+  const frames = allFrames().filter(f => isVisible(f) || f.id === ref.id);
+  const ordered = [ref, ...frames.filter(f => f.id !== ref.id)];
+  let h = `<table><thead><tr><th>${T("measure")}</th>`;
+  ordered.forEach(f => { h += `<th><span class="sw" style="background:${f.color}"></span>${esc(f.name)}${f.id === ref.id ? ` <span class="badge">${T("reference")}</span>` : ""}</th>`; });
+  h += "</tr></thead><tbody>";
+  ROWS.forEach(row => {
+    if (row.group) { h += `<tr class="group"><td colspan="${ordered.length + 1}">${T(row.group)}</td></tr>`; return; }
+    h += `<tr><td>${T(row.k)}</td>`;
+    const refVal = valueFor(ref, row);
+    ordered.forEach(f => {
+      const v = valueFor(f, row);
+      if (row.text) { h += `<td class="${f.id === ref.id ? "ref" : ""}">${v}</td>`; return; }
+      const dec = row.dec ?? 0;
+      const fmt = x => Number(x).toFixed(dec).replace(".", state.lang === "de" ? "," : ".");
+      let cell = fmt(v) + row.unit;
+      if (f.id !== ref.id) {
+        const d = v - refVal, r = Number(d.toFixed(dec));
+        const cls = r > 0 ? "pos" : r < 0 ? "neg" : "";
+        cell += `<span class="delta ${cls}">Δ ${r > 0 ? "+" : r < 0 ? "−" : "±"}${fmt(Math.abs(r))}</span>`;
+      }
+      h += `<td class="${f.id === ref.id ? "ref" : ""}">${cell}</td>`;
+    });
+    h += "</tr>";
+  });
+  h += `</tbody></table><div class="hint" style="margin-top:6px">${T("deltaNote")}</div>`;
+  document.getElementById("tablewrap").innerHTML = h;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* ---------- toolbar / texts ---------- */
+function renderChrome() {
+  document.documentElement.lang = state.lang;
+  document.title = T("title");
+  document.getElementById("title").textContent = T("title");
+  document.getElementById("lblLang").textContent = T("lang");
+  document.getElementById("lblAnchor").textContent = T("anchor");
+  document.getElementById("lblMode").textContent = T("mode");
+  document.getElementById("lang").value = state.lang;
+  const anchor = document.getElementById("anchor");
+  anchor.innerHTML = Object.entries(T("anchors")).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
+  anchor.value = state.anchor;
+  const mode = document.getElementById("mode");
+  mode.innerHTML = Object.entries(T("modes")).map(([k, v]) => `<option value="${k}">${v}</option>`).join("");
+  mode.value = state.mode;
+  document.getElementById("btnAdd").textContent = T("add");
+  document.getElementById("btnExport").textContent = T("export");
+  document.getElementById("lblTravel").textContent = T("travel");
+  document.getElementById("lblDims").textContent = T("dims");
+  document.getElementById("lblDimFrame").textContent = T("dimFrame");
+  document.getElementById("btnFit").textContent = T("fit");
+  document.getElementById("hintNav").textContent = T("nav");
+  document.getElementById("optTravel").checked = state.travel;
+  document.getElementById("optDims").checked = state.dims;
+  const dimSel = document.getElementById("dimFrame");
+  const frames = allFrames();
+  if (!frames.some(f => f.id === state.dimFrame)) state.dimFrame = refFrame().id;
+  dimSel.innerHTML = frames.map(f => `<option value="${esc(f.id)}">${esc(f.name)}</option>`).join("");
+  dimSel.value = state.dimFrame;
+}
+
+function renderAll(keepView) {
+  renderChrome(); renderCards(); renderSvg(keepView); renderTable();
+}
+
+/* ---------- events ---------- */
+document.getElementById("lang").onchange = e => { state.lang = e.target.value; persist(); renderAll(true); };
+document.getElementById("anchor").onchange = e => { state.anchor = e.target.value; persist(); renderAll(false); };
+document.getElementById("mode").onchange = e => { state.mode = e.target.value; persist(); renderTable(); };
+document.getElementById("optTravel").onchange = e => { state.travel = e.target.checked; persist(); renderSvg(true); };
+document.getElementById("optDims").onchange = e => { state.dims = e.target.checked; persist(); renderSvg(true); };
+document.getElementById("dimFrame").onchange = e => { state.dimFrame = e.target.value; persist(); renderSvg(true); };
+document.getElementById("btnFit").onclick = () => renderSvg(false);
+
+/* ---------- add / export ---------- */
+const FIELDS = ["reach", "stack", "hta", "sta", "seatTube", "chainstay", "bbDrop", "htLength", "forkA2C", "forkOffset", "travelRear", "travelFront", "wheelbase"];
+const FIELD_DEFAULTS = { hta: 64, sta: 77, bbDrop: 10, htLength: 110, forkOffset: 44 };
+const dlg = document.getElementById("dlg");
+
+document.getElementById("btnAdd").onclick = () => {
+  document.getElementById("dlgTitle").textContent = T("dlgTitle");
+  const opts = sel => WHEELS.map(w => `<option value="${w}" ${w === sel ? "selected" : ""}>${w.replace(".", ",")}"</option>`).join("");
+  const form = document.getElementById("addForm");
+  form.innerHTML = `
+    <label class="full">${T("name")}<input name="name" required></label>
+    <label>${T("color")}<input name="color" type="color" value="${PALETTE[customFrames.length % PALETTE.length]}"></label>
+    <span></span>
+    <label>${T("front")} ${T("wheelsWord")}<select name="wf">${opts("29")}</select></label>
+    <label>${T("rear")} ${T("wheelsWord")}<select name="wr">${opts("27.5")}</select></label>
+    ${FIELDS.map(k => `<label>${T("f_" + k)}<input name="${k}" type="number" step="0.1" ${k === "wheelbase" ? "" : "required"} value="${FIELD_DEFAULTS[k] ?? ""}"></label>`).join("")}
+    <div class="hint full">${T("dlgHint")}</div>
+    <div class="actions"><button type="button" id="dlgCancel">${T("cancel")}</button><button type="submit" value="ok">${T("save")}</button></div>`;
+  form.querySelector("#dlgCancel").onclick = () => dlg.close();
+  dlg.showModal();
+};
+document.getElementById("addForm").addEventListener("submit", e => {
+  const fd = new FormData(e.target);
+  const geo = {};
+  FIELDS.forEach(k => { const v = fd.get(k); if (v !== "" && v !== null) geo[k] = Number(v); });
+  const name = String(fd.get("name")).trim();
+  customFrames.push({
+    id: "custom-" + Date.now(), name, reference: false, color: fd.get("color"),
+    wheels: { front: fd.get("wf"), rear: fd.get("wr") }, geo, notes: {}
+  });
+  localStorage.setItem(LS_CUSTOM, JSON.stringify(customFrames));
+  renderAll(false);
+});
+document.getElementById("btnExport").onclick = () => {
+  if (!customFrames.length) { alert(T("exportEmpty")); return; }
+  const blob = new Blob([JSON.stringify(customFrames, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "custom-frames.json"; a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+window.addEventListener("resize", () => renderSvg(true));
+renderAll(false);
+</script>
+</body>
+</html>
