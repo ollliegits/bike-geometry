@@ -12,6 +12,8 @@
  *   forkOffset     Gabel-Offset / Rake
  *   travelRear/Front  Federweg hinten / vorn
  *   wheelbase      publizierter Radstand (nur zur Plausibilisierung / Anzeige)
+ *
+ * Optional pro Rahmen (Top-Level, nicht in geo): material (Text), weight (Rahmengewicht in kg)
  */
 window.FRAME_DATA = {
   // Außendurchmesser inkl. Reifen (ca. 2.3–2.4" Reifen), in mm
@@ -22,6 +24,8 @@ window.FRAME_DATA = {
       id: "commencal-clash-xs-2027",
       name: "Commencal Clash XS (2027)",
       reference: true,
+      material: "Aluminium (AL 6066 T4/T6)",
+      weight: 3.2,
       color: "#111827",
       wheels: { front: "27.5", rear: "26" },
       geo: {
@@ -39,6 +43,7 @@ window.FRAME_DATA = {
     {
       id: "lapierre-spicy-cf-xs",
       name: "Lapierre Spicy CF (XS)",
+      material: "Carbon (UD SLI)",
       reference: false,
       color: "#2563eb",
       wheels: { front: "29", rear: "27.5" },
@@ -57,6 +62,7 @@ window.FRAME_DATA = {
     {
       id: "kona-hei-hei-trail-cr-xs-2019",
       name: "Kona Hei Hei Trail CR (XS)",
+      material: "Carbon (Kona Carbon)",
       reference: false,
       color: "#16a34a",
       wheels: { front: "27.5", rear: "27.5" },

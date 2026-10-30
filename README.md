@@ -11,7 +11,7 @@ No installation, no account – it runs entirely in your browser.
 - **See the difference.** Frames are overlaid in one side view, all in the same scale. Pick one frame as the *reference* and see every other frame's deviation (Δ) in the table.
 - **Try different wheel sizes.** Choose 26", 27.5" or 29" for the front and rear wheel of each frame separately. The frame tilts the way the real bike would, so head angle, seat angle and bottom bracket height update automatically.
 - **Show or hide frames** with the checkbox on each card.
-- **Read the numbers.** Head angle, seat angle, reach, stack, chainstay length, seat tube length, travel, wheel sizes – plus wheelbase, BB height, BB drop, head tube length, fork length, fork offset and trail.
+- **Read the numbers.** Head angle, seat angle, reach, stack, chainstay length, seat tube length, travel, wheel sizes – plus wheelbase, BB height, BB drop, head tube length, fork length, fork offset and trail. Frame material and frame weight are shown too, whenever that information is available (missing values appear as "–").
 - **Show dimensions** directly in the drawing, and optionally the compressed suspension travel.
 - Switch the language between **English and German**.
 
