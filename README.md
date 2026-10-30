@@ -17,6 +17,29 @@ Visueller Vergleich von Fahrradrahmen-Geometrien (Seitenansicht, maßstabsgetreu
 - In [`frames-data.js`](frames-data.js) einen weiteren Eintrag in `frames` ergänzen (Felder siehe Kommentar am Dateianfang), oder
 - im Browser über „Rahmen hinzufügen“ (wird lokal im Browser gespeichert, Export als JSON möglich).
 
+### Agent-Unterstützung
+
+Im Dialog „Rahmen hinzufügen“ den Namen eintragen (z. B. `Santa Cruz Bronson (M, 2025)`), den generierten Prompt
+kopieren und in einen beliebigen Recherche-Agenten einfügen. Die JSON-Antwort des Agenten in das Antwortfeld
+einfügen und „In Formular übernehmen“ klicken – danach Werte prüfen und speichern. Erwartete Notation:
+
+```json
+{
+  "name": "Brand Model (XS, 2027)",
+  "wheels": { "front": "27.5", "rear": "26" },
+  "geo": {
+    "reach": 395, "stack": 593, "hta": 64, "sta": 77.5,
+    "seatTube": 360, "chainstay": 434, "bbDrop": 0,
+    "htLength": 110, "forkA2C": 552, "forkOffset": 42,
+    "travelRear": 160, "travelFront": 160, "wheelbase": 1159
+  },
+  "source": "https://…",
+  "notes": "Annahmen, abgeleitete Werte, Abweichungen"
+}
+```
+
+Unbekannte Werte sind `null`; sie bleiben im Formular leer und müssen ergänzt werden.
+
 ## Geometriemodell
 
 Tretlager = Ursprung. Hinterachse aus Kettenstrebe und Tretlager-Absenkung, Gabelachse aus Reach/Stack,
