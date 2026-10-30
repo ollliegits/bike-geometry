@@ -120,6 +120,7 @@ const I18N = {
     measure: "Maß",
     g_main: "Hauptmaße", g_more: "Weitere Maße",
     hta: "Lenkwinkel", sta: "Sitzwinkel", reach: "Reach", stack: "Stack", chainstay: "Kettenstrebenlänge",
+    material: "Rahmenmaterial", weight: "Rahmengewicht",
     seatTube: "Sitzrohrlänge", travelRear: "Federweg hinten", travelFront: "Federweg vorn", wheels: "Laufräder (v / h)",
     wheelbase: "Radstand", bbHeight: "Tretlagerhöhe (über Boden)", bbDrop: "Tretlager-Absenkung", htLength: "Steuerrohrlänge",
     forkA2C: "Gabel-Einbaulänge", forkOffset: "Gabel-Offset", trail: "Nachlauf", tilt: "Rahmenneigung (Nase hoch +)",
@@ -128,7 +129,7 @@ const I18N = {
     copyPrompt: "Prompt kopieren", copied: "Kopiert.", copyFailed: "Kopieren nicht möglich – Text manuell markieren.",
     pasteReply: "Antwort des Agenten (JSON) hier einfügen …", applyReply: "In Formular übernehmen",
     applyOk: "Übernommen – bitte Werte prüfen.", applyMissing: "Übernommen, es fehlen:", applyError: "Kein gültiges JSON gefunden.",
-    noteLabel: "Notizen",
+    noteLabel: "Notizen", f_material: "Rahmenmaterial (optional)", f_weight: "Rahmengewicht in kg (optional)",
     dlgTitle: "Rahmen hinzufügen", name: "Name", color: "Farbe", cancel: "Abbrechen", save: "Speichern",
     deltaNote: "Δ = Abweichung zur Referenz.",
     dlgHint: "Maße in mm / Grad. Tretlager-Absenkung: positiv = Tretlager unterhalb der Hinterachse.",
@@ -150,6 +151,7 @@ const I18N = {
     measure: "Measure",
     g_main: "Main measures", g_more: "Additional measures",
     hta: "Head angle", sta: "Seat angle", reach: "Reach", stack: "Stack", chainstay: "Chainstay length",
+    material: "Frame material", weight: "Frame weight",
     seatTube: "Seat tube length", travelRear: "Rear travel", travelFront: "Front travel", wheels: "Wheels (f / r)",
     wheelbase: "Wheelbase", bbHeight: "BB height (above ground)", bbDrop: "BB drop", htLength: "Head tube length",
     forkA2C: "Fork axle-to-crown", forkOffset: "Fork offset", trail: "Trail", tilt: "Frame tilt (nose up +)",
@@ -158,7 +160,7 @@ const I18N = {
     copyPrompt: "Copy prompt", copied: "Copied.", copyFailed: "Copy failed – select the text manually.",
     pasteReply: "Paste the agent's reply (JSON) here …", applyReply: "Apply to form",
     applyOk: "Applied – please review the values.", applyMissing: "Applied, missing:", applyError: "No valid JSON found.",
-    noteLabel: "Notes",
+    noteLabel: "Notes", f_material: "Frame material (optional)", f_weight: "Frame weight in kg (optional)",
     dlgTitle: "Add frame", name: "Name", color: "Colour", cancel: "Cancel", save: "Save",
     deltaNote: "Δ = difference to reference.",
     dlgHint: "Values in mm / degrees. BB drop: positive = bottom bracket below rear axle.",
@@ -483,6 +485,7 @@ const ROWS = [
   { k: "reach", unit: " mm", dyn: true }, { k: "stack", unit: " mm", dyn: true },
   { k: "chainstay", unit: " mm" }, { k: "seatTube", unit: " mm" },
   { k: "travelRear", unit: " mm" }, { k: "travelFront", unit: " mm" }, { k: "wheels", text: true },
+  { k: "material", str: true, optional: true }, { k: "weight", unit: " kg", dec: 2, trim: true, optional: true },
   { group: "g_more" },
   { k: "wheelbase", unit: " mm", dyn: true }, { k: "bbHeight", unit: " mm", derived: true },
   { k: "bbDrop", unit: " mm" }, { k: "htLength", unit: " mm" }, { k: "forkA2C", unit: " mm" },
@@ -492,6 +495,7 @@ const ROWS = [
 function valueFor(f, row) {
   const wheels = state.mode === "selected" ? wheelsOf(f) : f.wheels;
   if (row.text) return `${wheels.front}" / ${wheels.rear}"`;
+  if (row.optional) return f[row.k] ?? null;
   if (row.dyn || row.derived) {
     const sol = solved(f, wheels);
     if (state.mode === "factory" && row.dyn && row.k !== "wheelbase") return f.geo[row.k];
@@ -510,15 +514,19 @@ function renderTable() {
   h += "</tr></thead><tbody>";
   ROWS.forEach(row => {
     if (row.group) { h += `<tr class="group"><td colspan="${ordered.length + 1}">${T(row.group)}</td></tr>`; return; }
+    if (row.optional && ordered.every(f => valueFor(f, row) === null)) return;
     h += `<tr><td>${T(row.k)}</td>`;
     const refVal = valueFor(ref, row);
     ordered.forEach(f => {
       const v = valueFor(f, row);
-      if (row.text) { h += `<td class="${f.id === ref.id ? "ref" : ""}">${v}</td>`; return; }
+      const cellCls = f.id === ref.id ? "ref" : "";
+      if (row.text) { h += `<td class="${cellCls}">${v}</td>`; return; }
+      if (v === null) { h += `<td class="${cellCls}">–</td>`; return; }
+      if (row.str) { h += `<td class="${cellCls}">${esc(v)}</td>`; return; }
       const dec = row.dec ?? 0;
-      const fmt = x => Number(x).toFixed(dec).replace(".", state.lang === "de" ? "," : ".");
+      const fmt = x => (row.trim ? String(Number(Number(x).toFixed(dec))) : Number(x).toFixed(dec)).replace(".", state.lang === "de" ? "," : ".");
       let cell = fmt(v) + row.unit;
-      if (f.id !== ref.id) {
+      if (f.id !== ref.id && refVal !== null) {
         const d = v - refVal, r = Number(d.toFixed(dec));
         const cls = r > 0 ? "pos" : r < 0 ? "neg" : "";
         cell += `<span class="delta ${cls}">Δ ${r > 0 ? "+" : r < 0 ? "−" : "±"}${fmt(Math.abs(r))}</span>`;
@@ -598,6 +606,8 @@ Schema (all lengths in mm, angles in degrees, numbers only, null if unknown):
     "htLength": 0, "forkA2C": 0, "forkOffset": 0,
     "travelRear": 0, "travelFront": 0, "wheelbase": 0
   },
+  "material": "<frame material, e.g. Carbon, Aluminium 6061; null if unknown>",
+  "weight": <frame weight in kg for this size without shock/hardware, or null>,
   "source": "<URL(s) of the data>",
   "notes": "<assumptions, derived values, variants, inconsistencies>"
 }
@@ -612,6 +622,7 @@ Field definitions:
   If forkA2C is not published, derive it: forkA2C = (frontCentre - reach - forkOffset*sin(hta)) / cos(hta) - htLength, and say so in notes.
 - travelRear / travelFront: travel of the stock shock/fork of the standard build. Mention variants in notes.
 - wheels: factory wheel sizes (mixed/mullet possible). wheelbase: published wheelbase.
+- material / weight: as published; weight in kg (state in notes if it includes the shock or is for another size).
 
 Plausibility check before answering: frontCentre + sqrt(chainstay^2 - bbDrop^2) should be within ~5 mm of wheelbase. If not, mention it in notes. Never guess silently: unknown values = null and listed in notes.`;
 
@@ -643,6 +654,7 @@ function parseAgentReply(text) {
   return {
     name: obj.name ? String(obj.name) : "", geo,
     wf: wheel(obj.wheels?.front), wr: wheel(obj.wheels?.rear),
+    material: obj.material ? String(obj.material) : "", weight: num(obj.weight),
     source: obj.source ? (Array.isArray(obj.source) ? obj.source.join(" ") : String(obj.source)) : "",
     notes: obj.notes ? String(obj.notes) : ""
   };
@@ -667,6 +679,8 @@ document.getElementById("btnAdd").onclick = () => {
     <label>${T("front")} ${T("wheelsWord")}<select name="wf">${opts("29")}</select></label>
     <label>${T("rear")} ${T("wheelsWord")}<select name="wr">${opts("27.5")}</select></label>
     ${FIELDS.map(k => `<label>${T("f_" + k)}<input name="${k}" type="number" step="0.1" ${k === "wheelbase" ? "" : "required"} value="${FIELD_DEFAULTS[k] ?? ""}"></label>`).join("")}
+    <label>${T("f_material")}<input name="material" type="text"></label>
+    <label>${T("f_weight")}<input name="weight" type="number" step="0.01" min="0"></label>
     <label class="full">${T("source")}<input name="source" type="text"></label>
     <label class="full">${T("noteLabel")}<textarea name="notes" rows="2"></textarea></label>
     <div class="hint full">${T("dlgHint")}</div>
@@ -689,6 +703,8 @@ document.getElementById("btnAdd").onclick = () => {
       FIELDS.forEach(k => { form.elements[k].value = r.geo[k] ?? ""; });
       if (r.wf) form.elements.wf.value = r.wf;
       if (r.wr) form.elements.wr.value = r.wr;
+      form.elements.material.value = r.material;
+      form.elements.weight.value = r.weight ?? "";
       form.elements.source.value = r.source;
       form.elements.notes.value = r.notes;
       const missing = FIELDS.filter(k => r.geo[k] === null && k !== "wheelbase");
@@ -707,9 +723,12 @@ document.getElementById("addForm").addEventListener("submit", e => {
   const name = String(fd.get("name")).trim();
   const notes = String(fd.get("notes") || "").trim();
   const source = String(fd.get("source") || "").trim();
+  const material = String(fd.get("material") || "").trim();
+  const weight = fd.get("weight") === "" ? null : Number(fd.get("weight"));
   customFrames.push({
     id: "custom-" + Date.now(), name, reference: false, color: fd.get("color"),
     wheels: { front: fd.get("wf"), rear: fd.get("wr") }, geo,
+    ...(material ? { material } : {}), ...(weight ? { weight } : {}),
     ...(source ? { source } : {}), notes: notes ? { de: notes, en: notes } : {}
   });
   localStorage.setItem(LS_CUSTOM, JSON.stringify(customFrames));
